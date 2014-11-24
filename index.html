@@ -1,0 +1,372 @@
+<html>
+	<head>
+		<title>Reddit Crawler</title>
+		<link rel="stylesheet" href="style.css">
+		<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<script src="jquery.unveil.js"></script>
+		<script>
+
+		var target = {
+			subreddit : '',
+			url : '',
+			sort : '',
+			mode : '',
+			JSON : '',
+			newElement : '',
+			xpostMentions : [],
+			isNSFW : false
+		};
+
+		var settings = {
+			removeOnclick : true,
+			renderHtml5 : true,
+			showNSFW : true,
+			fadeLabels : false,
+			suggestReddits : true,
+			hugeImages : false,
+			allowOtherSources : true,
+			lazyLoading : false,
+			lazyLoadingString : ''
+		};
+
+		var system = {
+			untouched : true,
+			firstPress : false,
+			usedSettings : false,
+			usedFilter : false
+		};
+
+		var recommendationsSfw = ["aww", "Pics", "Cats", "awwducational", "EarthPorn", "funny", "AdviceAnimals", "gifs", "DataIsBeautiful", "Art", "OldSchoolCool", "Wallpapers", "WoahDude", "reactiongifs", "AbandonedPorn", "gaming", "food", "perfecttiming", "minimalism", "Offensive_Wallpapers", "blue", "BirdsWithArms", "FoodPorn", "undexpected"];
+		var recommendationsNsfw = ["NSFW", "BustyPetite", "NSFW_Gif", "Oilporn", "cfnm", "Xsome", "PrettyGirls", "Titties", "SexyGirls", "bonermaterial", "gentlemanboners", "Boobies", "Ass", "Anal", "Cumsluts", "NSFWHardcore", "MILF", "Blowjobs", "GirlsinYogapants", "holdthemoan", "burstingout", "Perky", "60fpsporn", "O_Faces", "LegalTeens", "celebnsfw", "datgap", "SexyButNotPorn"];
+
+		function fetchJson(subredditOverwrite) {
+			if (system.usedSettings) { localStorage.setItem('settings', JSON.stringify(settings)); };
+			if (system.untouched) { system.untouched = false; };
+			system.firstPress = true;
+
+			if (!subredditOverwrite) {
+				target.subreddit = $('#subreddit-input').val().trim();
+				if (target.subreddit == '') return;
+			} else {
+				target.subreddit = subredditOverwrite;
+				$('#subreddit-input').val(subredditOverwrite);
+			};
+
+
+			// Set Hash
+			//window.location.hash = "!/" + target.subreddit;
+
+			//Check for command after subreddit name
+			if (target.subreddit.split(" ").length > 1) {
+				system.usedFilter = true;
+				sortFilter = target.subreddit.split(" ")[1];
+				target.subreddit = target.subreddit.split(" ")[0];
+			} else {
+				system.usedFilter = false;
+				sortFilter = 0;
+			}
+
+			//Check if "Help" is used, if so, cancel everything and display the Help module
+			if (target.subreddit == "help") {
+				$('#results').html(' ').append('<div class="panel"><h1>Help</h1><br><br><h2>General</h2>Use <pre>options</pre> to change your settings.<br><br>Click on a post to remove it from your view.<br><br>Append a number to the subreddit to filter:<br><br><pre>0</pre> - Hot (default)<br><pre>1</pre> - Top of all Time<br><pre>2</pre> - New<br><pre>3</pre> - Top of the Year<br><pre>4</pre> - Top of the Month<br><br><pre>cats 3</pre> for the best cats of the year<br><pre>gif 1</pre> for the best GIFs of all time.<br><br></div>');
+				//<br><br><h2>Additional Info</h2><pre>Allow all Sources</pre> scans for all image links instead of just imgur and gfycat.<br><br><pre>Lazy Loading</pre> can improve performance on slow computers because it only starts to load images once they scroll into view.<br><br><br><br>
+
+				return;
+			};
+
+			//Check if "Options" is used, if so, cancel everything, display the Options module and set up the listeners
+			if (target.subreddit == "options") {
+				$('#results').html(' ').append('<div class="panel panel-options"><h1>Options</h1><br><br><h2>General</h2><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-1"><h6>Remove Entries on Click</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-3"><h6>Show NSFW Content</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-4"><h6>Huge Images</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-6"><h6>Suggest Related Subreddits</h6></div><h2>Performance</h2><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-2"><h6>Render HTML5 Video</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-5"><h6>Smooth Labels</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-7"><h6>Allow all Sources</h6></div><div class="options-box"><input type="checkbox" class="uiswitch" id="optionbox-8"><h6>Use Lazy Loading</h6></div></div>');
+
+				if (settings.removeOnclick) { $('#optionbox-1').prop('checked', true); };
+				if (settings.renderHtml5) { $('#optionbox-2').prop('checked', true); };
+				if (settings.showNSFW) { $('#optionbox-3').prop('checked', true); };
+				if (settings.hugeImages) { $('#optionbox-4').prop('checked', true); };
+				if (settings.fadeLabels) { $('#optionbox-5').prop('checked', true); };
+				if (settings.suggestReddits) { $('#optionbox-6').prop('checked', true); };
+				if (settings.allowOtherSources) { $('#optionbox-7').prop('checked', true); };
+				if (settings.lazyLoading) { $('#optionbox-8').prop('checked', true); };
+
+				$('#optionbox-1').change(function() { settings.removeOnclick = $(this).prop('checked'); });
+				$('#optionbox-2').change(function() { settings.renderHtml5 = $(this).prop('checked'); });
+				$('#optionbox-3').change(function() { settings.showNSFW = $(this).prop('checked'); });
+				$('#optionbox-4').change(function() { settings.hugeImages = $(this).prop('checked'); evaluateSettings(); });
+				$('#optionbox-5').change(function() { settings.fadeLabels = $(this).prop('checked'); evaluateSettings(); });
+				$('#optionbox-6').change(function() { settings.suggestReddits = $(this).prop('checked'); });
+				$('#optionbox-7').change(function() { settings.allowOtherSources = $(this).prop('checked'); });
+				$('#optionbox-8').change(function() { settings.lazyLoading = $(this).prop('checked'); evaluateSettings(); });
+
+				system.usedSettings = true;
+				return;
+			};
+
+			// Set Filter
+			if (sortFilter == 0) { target.sort = "/hot.json"; target.mode = "hot" } // hot / frontpage
+			else if (sortFilter == 1) { target.sort = "/top.json?sort=top&t=all"; target.mode = "top - ever" } // top of all time
+			else if (sortFilter == 2) { target.sort = "/new.json"; target.mode = "new" } // new
+			else if (sortFilter == 3) { target.sort = "/top.json?sort=top&t=year"; target.mode = "top - year"} // top of the year
+			else if (sortFilter == 4) { target.sort = "/top.json?sort=top&t=month"; target.mode = "top - month" } // top of the month
+			else { target.sort = "/hot.json"; target.mode = "hot" };
+
+			target.url = "http://www.reddit.com/r/" + target.subreddit + target.sort;
+			target.xpostMentions.length = 0;
+			target.isNSFW = false;
+
+			// Display "Loading" Dialogue
+			$('#results').html(' ').append('<div id="loader">Loading <span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + target.subreddit + '<br><br>' + target.mode + '</div>');
+
+			// Start the AJAX Request
+			target.JSON = $.ajax({
+				method : "get",
+				url : target.url,
+				dataType : "json",
+
+				success : function(){
+					$('#loader').remove();
+
+					for (var i = 0; i <= (target.JSON.responseJSON.data.children.length - 1); i++) {
+
+						var postTitle = target.JSON.responseJSON.data.children[i].data.title;
+
+						// NSFW Check
+						if (!settings.showNSFW && target.JSON.responseJSON.data.children[i].data.over_18) {
+							$('#results').html(' ').append('<div id="loader">NSFW Content is blocked via <pre>options</pre></div>');
+							return;
+							break;
+						} else if (target.JSON.responseJSON.data.children[i].data.over_18) {
+							target.isNSFW = true;
+						};
+
+						// X-Post Scan
+						if(~postTitle.indexOf('r/')) {
+							var xpostName = postTitle.substr( (postTitle.indexOf('r/') + 2) , 999 );
+							xpostName = xpostName.split(' ')[0].split(')')[0].split(']')[0].replace(/\W/g, '');
+
+							if (xpostName != target.subreddit) {
+								target.xpostMentions.push(xpostName);
+							};
+						}
+
+						//Imgur Handling
+						if (target.JSON.responseJSON.data.children[i].data.domain == "i.imgur.com" || target.JSON.responseJSON.data.children[i].data.domain == "imgur.com") {
+
+							var imgurEnding = target.JSON.responseJSON.data.children[i].data.url.split(".");
+							var imgurEndingLength = imgurEnding.length - 1;
+							if (imgurEnding[imgurEndingLength] == "gifv") {
+								// Imgur "GIFV" File
+								target.newElement = $('<div/>', {
+									class : 'image'
+						    		//title: postTitle
+								}).html("<a href='" + target.JSON.responseJSON.data.children[i].data.url + "' target='_blank'><span class='helper'></span><video autoplay='' loop='' muted='' preload='' poster='http://i.imgur.com/" + imgurEnding[imgurEndingLength - 1].substr(4) + ".jpg'><source src='http://i.imgur.com/" + imgurEnding[imgurEndingLength - 1].substr(4) + ".webm' type='video/webm'><source src='http://i.imgur.com/" + imgurEnding[imgurEndingLength - 1].substr(4) + ".mp4' type='video/mp4'></video></a>").appendTo('#results');
+								target.newElement.append('<span class="title">' + postTitle + '</span>');
+							} else {
+								// Classic Image File
+
+								var imgurCode = target.JSON.responseJSON.data.children[i].data.url.replace("http://i.imgur.com/", "").replace("https://i.imgur.com/", "").replace("http://imgur.com/", "").replace("https://imgur.com/", "").replace("http://www.imgur.com/", "").replace("https://www.imgur.com/", "");
+
+								if (imgurCode.substr(0,2) == "a/") {
+									// Is Album. Start API Request for the first image.
+
+									var albumTargetUrl = "https://api.imgur.com/3/album/" + imgurCode.slice(2) + "/images";
+
+									var albumJSON = $.getJSON(target.url, function(){
+										var albumTargetUrl = albumJSON.responseJSON.data[0].link;
+										target.newElement = $('<div/>', { class : 'image' }).html("<span class='helper'></span><img " + settings.lazyLoadingString + "src='" + albumTargetUrl + "'>").appendTo('#results');
+										target.newElement.append('<span class="title">' + postTitle + '</span>');
+									});
+								} else if (imgurCode.substr(0,8) == "gallery/") {
+									// Is Gallery.
+								} else {
+									// Check if it hotlinks the image
+									if (imgurCode.split(".").length == 1) {
+										// Use .jpg as a universal ending (browser displays any image anyway)
+										imgurCode += ".jpg";
+									};
+
+									target.newElement = $('<div/>', {
+										class : 'image'
+						    			//title: postTitle
+									}).html("<a href='" + target.JSON.responseJSON.data.children[i].data.url + "' target='_blank'><span class='helper'></span><img " + settings.lazyLoadingString + "src='http://i.imgur.com/" + imgurCode + "'></a>").appendTo('#results');
+									target.newElement.append('<span class="title">' + postTitle + '</span>');
+								}
+							}
+						}
+
+						//Gfycat Handling
+						else if (target.JSON.responseJSON.data.children[i].data.domain == "gfycat.com" && settings.renderHtml5 == true) {
+							var gfycatUrl = target.JSON.responseJSON.data.children[i].data.url;
+							gfycatUrl = gfycatUrl.replace("http://gfycat.com/", "").replace("https://gfycat.com/", "").replace("http://www.gfycat.com/", "").replace("https://www.gfycat.com/", "");
+							target.newElement = $('<div/>', {
+								class : 'image'
+						    	//title: postTitle
+							}).html("<a href='" + target.JSON.responseJSON.data.children[i].data.url + "' target='_blank'><span class='helper'></span><video autoplay='' loop='' muted='' preload='' poster='http://thumbs.gfycat.com/" + gfycatUrl + "-poster.jpg'><source src='http://giant.gfycat.com/" + gfycatUrl + ".webm' type='video/webm'><source src='http://giant.gfycat.com/" + gfycatUrl + ".mp4' type='video/mp4'></video></a>").appendTo('#results');
+							target.newElement.append('<span class="title">' + postTitle + '</span>');
+						}
+
+						//Other JPG / PNG / GIF
+						else if (settings.allowOtherSources == true) {
+							var otherUrlBase = target.JSON.responseJSON.data.children[i].data.url;
+							var otherUrlEnding = otherUrlBase.substr(otherUrlBase.length - 3).toLowerCase();
+
+							if (otherUrlEnding == "jpg" || otherUrlEnding == "png" || otherUrlEnding == "gif") {
+								newElement = $('<div/>', {
+								class : 'image'
+								}).html("<a href='" + target.JSON.responseJSON.data.children[i].data.url + "' target='_blank'><span class='helper'></span><img " + settings.lazyLoadingString + "src='" + target.JSON.responseJSON.data.children[i].data.url + "'></a>").appendTo('#results');
+								newElement.append('<span class="title">' + postTitle + '</span>');
+							};
+						};
+
+						if (settings.removeOnclick) { $(target.newElement).bind('click', function(){ $(this).remove(); }); };
+					};
+
+					// Lazy Load Initiation
+					if (settings.lazyLoading) {
+						$('img').unveil(200);
+					};
+
+					// Current Subreddit Info Card
+					if (target.mode != 'top - ever') {
+						$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + target.subreddit + " 1')" }).html('Switch to <br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + target.subreddit + '<br>top - ever').appendTo('#results');
+					} else {
+						$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + target.subreddit + " 4')" }).html('Switch to <br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + target.subreddit + '<br>top - month').appendTo('#results');
+					}
+
+
+
+					// Suggest Mentioned Subreddits - "Mentioned here"
+					for (var i = target.xpostMentions.length - 1; i >= 0; i--) {
+						$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + target.xpostMentions[i] + "')" }).html('Mentioned here<br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + target.xpostMentions[i]).appendTo('#results');
+					};
+
+
+					// Suggest Popular Subreddits - "Recommended"
+					if (settings.showNSFW && target.isNSFW) {
+						for (var i = 1; i >= 0; i--) {
+							var randomRecommendation = recommendationsNsfw[Math.floor(Math.random() * recommendationsNsfw.length)];
+
+							$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + randomRecommendation + "')" }).html('Recommended<br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + randomRecommendation).appendTo('#results');
+						};
+					} else {
+						for (var i = 1; i >= 0; i--) {
+							var randomRecommendation = recommendationsSfw[Math.floor(Math.random() * recommendationsSfw.length)];
+
+							$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + randomRecommendation + "')" }).html('Recommended<br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + randomRecommendation).appendTo('#results');
+						};
+					};
+
+					// Suggest Related Subreddits - "Also try"
+					if (settings.suggestReddits) {
+
+						relatedRedditJSON = $.getJSON("http://www.reddit.com/subreddits/search.json", 
+							{
+								q : target.subreddit,
+								limit : 4
+							}, function(){
+								var relatedRedditNames = [];
+								for (var i = relatedRedditJSON.responseJSON.data.children.length - 1; i >= 0; i--) {
+									if (relatedRedditJSON.responseJSON.data.children[i].data.display_name.toLowerCase() != target.subreddit.toLowerCase()) {
+										relatedRedditNames.push(relatedRedditJSON.responseJSON.data.children[i].data.display_name);
+									};
+								};		
+								for (var i = relatedRedditNames.length - 1; i >= 0; i--) {
+									$('<div/>', { class : 'panel-suggestion', onclick : "fetchJson('" + relatedRedditNames[i] + "')" }).html('Also try<br><span style="color: ' + getRandomColor() + '; opacity: 0.5;">/r/</span>' + relatedRedditNames[i]).appendTo('#results');
+								};
+							}
+						);
+					};
+				},
+
+				error : function () {
+					$('#results').html(' ').append('<div id="loader">There was an error.</div>');
+					$('#subreddit-input').val('').focus();
+				}
+
+			}
+			);
+
+		}
+
+		function getRandomColor() {
+    		var letters = '0123456789ABCDEF'.split('');
+    		var color = '#';
+    		for (var i = 0; i < 6; i++ ) {
+     	 	  color += letters[Math.floor(Math.random() * 16)];
+    		}
+    		return color;
+		}
+
+		function evaluateSettings() {
+			if (settings.hugeImages) { $('body').addClass('hugeimages');} 
+			else { $('body').removeClass('hugeimages'); };
+
+			if (settings.fadeLabels) { $('body').addClass('smoothtransition');} 
+			else { $('body').removeClass('smoothtransition'); };
+
+			if (settings.lazyLoading) { settings.lazyLoadingString = "src='null.gif' data-";} 
+			else { settings.lazyLoadingString = ""; };
+		}
+
+		
+
+		$(function(){
+			// Intro Text
+			setTimeout(function(){
+				if (system.untouched) {
+					$('<div/>', { id: 'loader' }).html('Type <pre>help</pre> for more information').hide().appendTo('#results').fadeIn();
+				};
+			}, 5000);
+			setTimeout(function(){
+				if (system.untouched) {
+					$('#loader').fadeOut('400', function(){ 
+						$(this).remove();
+						$('<div/>', { id: 'loader' }).html('Type <pre>options</pre> to change your settings').hide().appendTo('#results').fadeIn();
+					});
+				};
+			}, 10000);
+			setTimeout(function(){
+				if (system.untouched) {
+					$('#loader').fadeOut('400', function(){ 
+						$(this).remove();
+						$('<div/>', { id: 'loader' }).html('Try <pre>aww</pre> or <pre>pics</pre> to start surfing').hide().appendTo('#results').fadeIn();
+					});
+				};
+			}, 15000);
+
+			// Instantly Clear Input on first backspace
+			$('input').keydown(function(e) {
+			    if ((e.which == 8 || e.which == 46) && system.firstPress == true && system.usedFilter == false) {
+			        $(this).val('');
+			        system.firstPress = false;
+			    }
+			});
+
+			// Check Localstorage Settings
+			var retrievedObject = localStorage.getItem('settings');
+		
+			if (retrievedObject) {
+				settings = JSON.parse(retrievedObject);
+				evaluateSettings();
+			};
+
+			// Check Hash
+			//if(window.location.hash) {
+			//  fetchJson(window.location.hash.substr(3));
+			//}
+		});
+
+		
+
+		</script>
+	</head>
+	<body>
+		<div id="wrapper">
+			<form onsubmit="fetchJson(); return false;">
+				<input type="text" autofocus="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Enter a Subreddit" id="subreddit-input" onclick="this.select();">
+				<button>Go!</button>
+			</form>
+		</div>
+		<div id="results">
+			
+		</div>
+	</body>
+</html>
