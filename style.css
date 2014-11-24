@@ -50,7 +50,7 @@ h2 {
 
 h6 {
 	font-size: 13px;
-	/*font-weight: 300;*/
+	font-weight: 300;
 	letter-spacing: .5px;
 	color: #666;
 	margin: 0.8em;
@@ -168,7 +168,7 @@ body.hugeimages #results .image {
 }
 
 #results .panel-suggestion:hover span {
-  opacity: 1 !importantmax-width: 750px;;
+  opacity: 1 !important;
 }
 
 #results .image:after {
