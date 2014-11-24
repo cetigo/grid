@@ -216,7 +216,7 @@
 							};
 						};
 
-						if (settings.removeOnclick) { $(target.newElement).bind('click', function(){ $(this).remove(); }); };
+						if (settings.removeOnclick) { $(target.newElement).bind('click', function(){ $(this).remove(); return false; }); };
 					};
 
 					// Lazy Load Initiation
