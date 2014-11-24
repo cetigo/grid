@@ -3,14 +3,6 @@
 	padding: 0;
 }
 
-/* Typography */
-
-@font-face {
-  src: url('SourceSansPro-ExtraLight.otf');
-  font-family: "Source Sans Pro";
-  font-weight: 100;
-}
-
 body {
   font-family: "Helvetica Neue", "Source Sans Pro", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
