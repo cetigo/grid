@@ -1,0 +1,112 @@
+<html>
+	<head>
+		<title>Grid</title>
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,200,300' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="style.css">
+		<link rel="shortcut icon" href="images/favicon.png">
+		<meta name="referrer" content="no-referrer" />
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script>
+			window.jQuery || document.write('<script src="vendor/jquery.min.js"><\/script><script>var offlineMode = true;<\/script>')
+		</script>
+		<script type="text/javascript" src="vendor/lodash.min.js"></script>
+		<script src="vendor/lz-string.min.js"></script>
+
+		<script src="dist/parser.js"></script>
+		<script src="dist/view.js"></script>
+		<script src="dist/panel.js"></script>
+		<script src="dist/input.js"></script>
+		<script src="dist/main.js"></script>
+	</head>
+	<body>
+
+		<div id="wrapper">
+
+			<div id="wrapper-menu">
+				<div class="wrapper-menu-item">help</div>
+				<div class="wrapper-menu-item">options</div>
+				<div class="wrapper-menu-item">reel</div>
+				<div class="wrapper-menu-item">custom</div>
+			</div>
+
+			<form onsubmit="fetchJson(); return false;">
+				<input type="text" autofocus="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Starting up" id="grid-input" onclick="core.view.resetHighlight()">
+				<button>Go!</button>
+			</form>
+
+			<div id="wrapper-loadcontainer">
+				<div id="loader-fetch" class="wrapper-loader"><span></span></div>
+				<div id="loader-load" class="wrapper-loader"><span></span></div>
+			</div>
+
+		</div>
+
+		<div id="results">
+			
+		</div>
+
+		<div id="slideshow">
+
+			<div id="slideshow-menu">
+				<div class="wrapper-menu-item">Download</div>
+				<div class="wrapper-menu-item">Related</div>
+				<div class="wrapper-menu-item">Save</div>
+				<div class="wrapper-menu-item">ImgOps</div>
+			</div>
+
+			<div id="exit" onclick="core.view.quitSlideshow()"></div>
+
+			<div id="play" onclick="autoplaySlideShow(true)"></div>
+
+			<div id="controls">
+
+				<div class="controlblock" id="controlblock-nav"><pre class="flatinline" id="arrow-indicator-left">&larr;</pre> <pre class="flatinline" id="arrow-indicator-right">&rarr;</pre> Navigate</div>
+				<div class="controlblock" id="controlblock-save"><pre class="flatinline" id="arrow-indicator-down">&darr;</pre> <span id="controlblock-save-label">Save</span></div>
+
+				<div class="controlblock" id="controlblock-album"><pre class="flatinline" id="arrow-indicator-up">&uarr;</pre> Open Album</div>
+				<div class="controlblock" id="controlblock-video"><pre class="flatinline" id="arrow-indicator-up">&uarr;</pre> Control Video</div>
+
+				<div class="controlblock" id="controlblock-access"><pre class="flatinline">N</pre> Access Link</div>
+				<div class="controlblock" id="controlblock-nextpage"><pre class="flatinline">Space</pre> Load next page</div>
+
+				<div class="controlblock" id="controlblock-video-exit"><pre class="flatinline" id="arrow-indicator-up">&uarr;</pre> Exit Video Control</div>
+				<div class="controlblock" id="controlblock-video-skim"><pre class="flatinline" id="arrow-indicator-left">&larr;</pre> <pre class="flatinline" id="arrow-indicator-right">&rarr;</pre> Skim Video</div>
+				<div class="controlblock" id="controlblock-video-sound"><pre class="flatinline" id="arrow-indicator-down">&darr;</pre> Toggle Sound</div>
+			</div>
+
+			<div id="meta"></div>
+
+			<div id="slideshowoverlay" onclick="core.view.switchSlideshow()"></div>
+
+		</div>
+
+		<div id="album">
+			
+		</div>
+
+		<div id="reel" onclick="reelController.step()">
+			<div id="reelplay" onclick="autoplaySlideShow(true)"></div>
+		</div>
+
+		<div id="messagecnt">
+		</div>
+
+		<div id="debugmsgcnt">
+
+		</div>
+
+		<div id="helpmodal" onclick="helpController.destroy()">
+		</div>
+
+		<!-- Google Analytics -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-62570826-1', 'auto');
+			ga('send', 'pageview');
+		</script>
+	</body>
+</html>

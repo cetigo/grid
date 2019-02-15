@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>API Tester</title>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script type="text/javascript">
+	
+function doRequest(options) {
+	$.ajax({
+        method: "get",
+        url: options.url,
+        dataType: options.dataType,
+
+        success: function(data) {
+            $('#output-status').text('Success');
+            $('#output-answer').text(JSON.stringify(data));
+        },
+
+        error: function(x, status, error) {
+            $('#output-status').text(status);
+            $('#output-answer').text(JSON.stringify(error));
+        }
+
+    });
+}
+
+function doRequestWithGetJson(options) {
+	$.getJSON(options.url, function(data) {
+        $('#output-answer').text(JSON.stringify(data));
+    });
+}
+
+function triggerRequest() {
+
+	var corsioProxy = ($('#form-corsio').is(':checked')) ? "http://cors.io?u=" : "";
+
+	var options = {
+		url: corsioProxy + $('#form-url').val(),
+		dataType: ($('#form-jsonp').is(':checked')) ? "jsonp" : "json"
+	}
+
+	$('#output-status').text('');
+    $('#output-answer').text('');
+	
+	if ($('#form-getjson').is(':checked')) doRequestWithGetJson(options);
+	else doRequest(options);
+}
+
+</script>
+<style type="text/css">
+
+	body { font-family: sans-serif; }
+
+	#form, #output {
+		margin: 25px;
+		padding: 15px;
+		background-color: #eee;
+	}
+
+	#form input, #form label { display: block; }
+	#form #form-url { width: 300px; padding: 5px; }
+	#form .inline { display: inline-block; }
+
+	.output-box { font-family: monospace; color: #555; }
+
+</style>
+<body>
+
+<div id="form">
+	<h2>API Tester</h2>
+
+	<label>Url</label>
+	<input type="text" placeholder="Url" name="url" id="form-url">
+
+	<h3>Options</h3>	
+
+	<input class="inline" type="checkbox" name="corsio" id="form-corsio">
+	<label class="inline" for="form-corsio">Use cors.io proxy</label><br>
+
+	<input class="inline" type="checkbox" name="jsonp" id="form-jsonp">
+	<label class="inline" for="form-jsonp">Use JSONP</label><br>
+
+	<input class="inline" type="checkbox" name="getjson" id="form-getjson">
+	<label class="inline" for="form-getjson">Use $.getJSON (ignores JSONP)</label><br><br>
+
+	<button onclick="triggerRequest()">Go</button>
+</div>
+
+<div id="output">
+	<h3>Status</h3>
+	<div class="output-box" id="output-status"></div>
+	<h3>Answer</h3>
+	<div class="output-box" id="output-answer"></div>
+</div>
+
+</body>
+</html>
