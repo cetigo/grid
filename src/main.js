@@ -1757,7 +1757,7 @@ var systemController = {
 
     readHash: function (str) {
         if (window.location.hash) {
-            return window.location.hash.substr(3).replace('%20',' ');
+            return window.location.hash.substr(3).replace(/%20/g,' ');
         } else {
             return false;
         }

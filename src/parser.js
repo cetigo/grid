@@ -71,13 +71,14 @@ class Parser {
 
         if (commands[this.session.command[0]]) {
             commands[this.session.command[0]].method(this.session.command);
-            return;
         }
+        else {
+            systemController.reset();
 
-        systemController.reset();
-
-        this.session.loadType = this.getLoadType(this.session.rawCommand);
-        this.loadAdapter(this.session.command, this.session.loadType);
+            this.session.loadType = this.getLoadType(this.session.rawCommand);
+            this.loadAdapter(this.session.command, this.session.loadType);
+        }
+        
         systemController.setHash(this.session.rawCommand);
     }
 
