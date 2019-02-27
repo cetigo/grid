@@ -394,13 +394,19 @@ class View {
                 const hasAudio = !!this.mozHasAudio || !!this.webkitAudioDecodedByteCount || this.audioTracks && !!this.audioTracks.length;
                 slideshowObject.videoUrl.hasAudio = hasAudio;
                 const audioString = (hasAudio) ? "sound" : "mute";
-                const currentSrcUrl = new URL(this.currentSrc);
+
+                let videoHostname = "pending";
+
+                if (this.currentSrc)
+                {
+                    videoHostname = new URL(this.currentSrc).hostname;
+                }
 
                 metaVideoElem
                     .html(
                         `${Math.round(this.currentTime)}s/${Math.round(this.duration)}s<br>
                         ${audioString}<br>
-                        ${currentSrcUrl.hostname}`
+                        ${videoHostname}`
                     );
             };
 

@@ -1026,14 +1026,13 @@ const fetchHandlers = {
         getInitialVariables: function(inputOptions) {
 
             return {
-                url: "https://gfycat.com/cajax/get/" + inputOptions.fetchData,
-                dataType: "jsonp"
+                url: "https://api.gfycat.com/v1/gfycats/" + inputOptions.fetchData,
+                dataType: "json"
             }
 
         },
 
         getResolveFetchObject: function(jsonResponse) {
-
             return {
                 videoUrl: {
                     webm: jsonResponse.gfyItem.webmUrl,

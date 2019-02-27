@@ -6,10 +6,14 @@ function refreshPanelReadyState(domId, imageUrl) {
         .load(function () {
             var imgObject = $(this).get(0);
 
-            core.view.panels[domId].setReady('loaded', {
-                width: imgObject.naturalWidth,
-                height: imgObject.naturalHeight
-            });
+            if (core.view.panels[domId])
+            {
+                core.view.panels[domId].setReady('loaded', {
+                    width: imgObject.naturalWidth,
+                    height: imgObject.naturalHeight
+                });
+            }
+            
             $(this).remove();
         })
         .error(function () {
@@ -1200,9 +1204,9 @@ function detectUrl(inputUrl, inputOptions, callback, returnRaw) {
         var gfycatCode = rawUrlSplit[rawUrlSplit.length - 1].replace('.mp4', '').replace('.webm', '');
 
         parseImage.contentType = 2;
-        parseImage.posterUrl = parseImage.imageUrl = "https://thumbs.gfycat.com/" + gfycatCode + "-poster.jpg";
-        parseImage.webmUrl = parseImage.downloadUrl = "https://giant.gfycat.com/" + gfycatCode + ".webm";
-        parseImage.mp4Url = "https://giant.gfycat.com/" + gfycatCode + ".mp4";
+        parseImage.needsFetch = true;
+        parseImage.fetchType = "gfycat";
+        parseImage.fetchData = gfycatCode;
     }
 
     // Deviantart Handling
