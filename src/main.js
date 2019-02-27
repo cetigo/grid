@@ -199,6 +199,8 @@ var commands = {
                 } else {
                     outputMessage(`Setting ${args[1]} does not exist.`);
                 }
+            } else {
+                outputMessage("Expected an argument");
             }
             core.input.setValue("");
             core.input.focus();
@@ -849,14 +851,16 @@ function fetchJson(override, customSrcBlob, customType) {
         rawCommand = override.trim();
         if (rawCommand === 'home') rawCommand = '';
     } else {
-        rawCommand = core.input.getValue().trim();
+        rawCommand = core.input.getValue().trim().replace("%20", " ");
     }
 
     if (core.view.album.active) core.view.accessAlbum();
     if (core.view.slideshow.active) core.view.quitSlideshow();
 
     if (system.customMode) customModeParse(rawCommand, customSrcBlob, customType);
-    else core.parser.parse(rawCommand);
+    else {
+        core.parser.parse(rawCommand);
+    }
 }
 
 /* ----- UI Controllers ----- */

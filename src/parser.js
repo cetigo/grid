@@ -71,7 +71,6 @@ class Parser {
 
         if (commands[this.session.command[0]]) {
             commands[this.session.command[0]].method(this.session.command);
-            systemController.setHash(this.session.rawCommand);
             return;
         }
 
@@ -282,7 +281,7 @@ class Parser {
              * without interfering with the UI. Better performance because of multithreading.
              * @type {Worker}
              */
-            const parseWorker = new Worker('dist/parser-worker.js');
+            const parseWorker = new Worker('src/parser-worker.js');
             parseWorker.onmessage = (e) => {
                 this.updateWorkerStatus(e.data, data.input);
                 if (e.data.finished) {
