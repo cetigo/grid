@@ -2340,7 +2340,8 @@ $(function () {
     // Swipe Gestures Initialization
     document.addEventListener('touchstart', swipeGestureHandler.handleTouchStart, false);
     document.addEventListener('touchmove', swipeGestureHandler.handleTouchMove, false);
-
+    document.addEventListener('touchend', swipeGestureHandler.handleTouchEnd, false);
+    document.addEventListener('touchcancel', swipeGestureHandler.handleTouchCancel, false);
 });
 
 /* ----- Mobile Swipe Gestures ----- */
@@ -2349,12 +2350,17 @@ $(function () {
 const swipeGestureHandler = {
     vars: {
         xDown: null,
-        yDown: null
+        yDown: null,
+        properSwipe: false
     },
 
     reset: function () {
         swipeGestureHandler.vars.xDown = null;
         swipeGestureHandler.vars.yDown = null;
+    },
+
+    endSwipe: function() {
+        swipeGestureHandler.vars.properSwipe = false;
     },
 
     handleTouchStart: function (evt) {
@@ -2363,7 +2369,6 @@ const swipeGestureHandler = {
     },
 
     handleTouchMove: function (evt) {
-        evt.preventDefault();
         if (!swipeGestureHandler.vars.xDown || !swipeGestureHandler.vars.yDown) return;
 
         var xUp = evt.touches[0].clientX;
@@ -2372,29 +2377,60 @@ const swipeGestureHandler = {
         var xDiff = swipeGestureHandler.vars.xDown - xUp;
         var yDiff = swipeGestureHandler.vars.yDown - yUp;
 
-        if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
+        var properSwipe = true;
+        if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 10) {/*most significant*/
             if (xDiff > 0) {
-                /* left swipe */
+                // Left swipe
                 core.view.switchSlideshow(true);
             } else {
-                /* right swipe */
-                core.view.switchSlideshow();
+                // Right swipe
+                if (core.view.slideshow.position == (core.view.slideshow.length - 1) && (core.view.slideshow.active || core.view.slideshow.highlightingActive) && !core.view.album.active && !system.customMode) {
+                    extendPage(true);
+                }
+                else {
+                    core.view.switchSlideshow();
+                }
             }
-        } else {
-            if (yDiff > 0) {
-                /* up swipe */
-                if (core.view.slideshow.active) {
+        } else if (Math.abs(yDiff) > 50) {
+            if (core.view.slideshow.active)
+            {
+                if (yDiff > 0) {
+                    // Up swipe
                     core.view.inspectSlideshow();
                 } else {
-                    toggleHighlight(false);
+                    // Down swipe
+                    toggleHighlight(true);
                 }
-
-            } else {
-                /* down swipe */
+            }
+            else if (core.view.mode.reel && yDiff < 0) {
+                // Down swipe in reel
                 toggleHighlight(true);
             }
+            else {
+                properSwipe = false;
+            }
         }
+        else {
+            properSwipe = false;
+        }
+
+        if (properSwipe)
+        {
+            swipeGestureHandler.vars.properSwipe = true;
+            swipeGestureHandler.reset();
+        }
+    },
+
+    handleTouchEnd: function (evt) {
+        if (swipeGestureHandler.vars.properSwipe)
+            evt.preventDefault();
         swipeGestureHandler.reset();
+        swipeGestureHandler.endSwipe();
+    },
+
+    handleTouchCancel: function (evt) {
+        swipeGestureHandler.reset();
+        swipeGestureHandler.endSwipe();
     }
 };
 
