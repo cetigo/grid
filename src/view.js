@@ -294,13 +294,20 @@ class View {
         } else {
             this.slideshow.position++;
             if (this.slideshow.position >= this.slideshow.length) {
-                this.slideshow.position = 0;
+                // Wrap around only if not during slideshow load
+                if (!core.parser.meta.pageLoadUnderway)
+                    this.slideshow.position = 0;
+                else
+                    this.slideshow.position = this.slideshow.length - 1;
             }
         }
 
         if (this.slideshow.position == (this.slideshow.length - 1) && core.parser.meta.pageLoadPossible) {
             this.activePanel.domElement.addClass('focus-nextpage');
         }
+
+        if (this.slideshow.position >= (this.slideshow.length - 5))
+            extendPage(false);
 
         this.revealProximity();
 

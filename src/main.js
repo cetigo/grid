@@ -622,15 +622,34 @@ const reelController = {
 };
 
 /* ----- Basic functionality ----- */
+function onPageExtensionStart()
+{
+    core.parser.meta.pageLoadUnderway = true;
+    $('.focus-nextpage').removeClass('focus-nextpage').addClass('focus-nextload');
+}
+
+function onPageExtensionEnd(success)
+{
+    core.parser.meta.pageLoadUnderway = false;
+    if (success) {
+        $('.panel, .panel-suggestion').remove();
+        $('.focus-nextload').removeClass('focus-nextload');
+    }
+    else
+    {
+        outputMessage("There was an error loading the page");
+        $('.focus-nextload').removeClass('focus-nextload').addClass('focus-nextpage');
+    }
+}
 
 function extendPage(invokeCallback) {
-    if (!core.parser.meta.pageLoadPossible) return false;
+    if (!core.parser.meta.pageLoadPossible || core.parser.meta.pageLoadUnderway) return false;
 
     core.parser.meta.page++;
 
     if (core.parser.session.loadType === 'tumblr') {
         var tempUrl = core.parser.session.url + '&offset=' + (20 * core.parser.meta.page);
-        $('.focus-nextpage').removeClass('focus-nextpage').addClass('focus-nextload');
+        onPageExtensionStart();
 
         core.parser.session.JSON = $.ajax({
             method: "get",
@@ -639,9 +658,8 @@ function extendPage(invokeCallback) {
             dataType: "jsonp",
 
             success: function () {
+                onPageExtensionEnd(true);
 
-                $('.panel, .panel-suggestion').remove();
-                $('.focus-nextload').removeClass('focus-nextload');
                 loadController.show();
                 loadController.updateProgress(100, 'fetch');
 
@@ -658,6 +676,8 @@ function extendPage(invokeCallback) {
 
                 core.view.initialize(true);
                 if (invokeCallback) core.view.switchSlideshow();
+                
+                core.view.revealProximity();
 
                 // extendPage Card
                 $('<div/>', {
@@ -667,8 +687,7 @@ function extendPage(invokeCallback) {
             },
 
             error: function (x, status, error) {
-                outputMessage("There was an error loading the page");
-                $('.focus-nextload').removeClass('focus-nextload').addClass('focus-nextpage');
+                onPageExtension(false);
             }
 
         });
@@ -678,8 +697,7 @@ function extendPage(invokeCallback) {
     target.pageModifier = "&count=" + core.parser.meta.page * 25;
 
     var tempUrl = core.parser.session.url + target.pageModifier + "&after=" + core.parser.session.lastUrl;
-
-    $('.focus-nextpage').removeClass('focus-nextpage').addClass('focus-nextload');
+    onPageExtensionStart();
 
     // Start the AJAX Request
     core.parser.session.JSON = $.ajax({
@@ -689,9 +707,7 @@ function extendPage(invokeCallback) {
         dataType: "json",
 
         success: function () {
-
-            $('.panel, .panel-suggestion').remove();
-            $('.focus-nextload').removeClass('focus-nextload');
+            onPageExtensionEnd(true);
 
             core.parser.session.lastUrl = core.parser.session.JSON.responseJSON.data.after;
 
@@ -701,6 +717,8 @@ function extendPage(invokeCallback) {
             if (invokeCallback) {
                 core.view.switchSlideshow();
             }
+            
+            core.view.revealProximity();
 
             // extendPage Card
             $('<div/>', {
@@ -752,8 +770,7 @@ function extendPage(invokeCallback) {
         },
 
         error: function (x, status, error) {
-            outputMessage("There was an error loading the page");
-            $('.focus-nextload').removeClass('focus-nextload').addClass('focus-nextpage');
+            onPageExtensionEnd(false);
         }
 
     });
@@ -2237,11 +2254,11 @@ $(function () {
                 toggleHighlight(true);
                 e.preventDefault();
                 break;
-            case 27:
-            case 17:
-            case 18:
+            case 27: // Command
+            case 17: // Ctrl (And Alt Gr)
             case 225:
-                // Ctrl, Alt, Command and AltGr
+            case 226: // <>|
+                e.preventDefault();
                 if (core.view.slideshow.active) {
                     core.view.quitSlideshow();
                 } else if (!core.view.mode.special && !core.view.mode.reel && core.view.slideshow.highlightingActive) {

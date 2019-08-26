@@ -23,6 +23,7 @@ class Parser {
             mode: '',
             page: 0,
             pageLoadPossible: false,
+            pageLoadUnderway: false,
             isNSFW: false
         };
 
@@ -51,6 +52,7 @@ class Parser {
         this.meta.mode = '';
         this.meta.page = 0;
         this.meta.pageLoadPossible = false;
+        this.meta.pageLoadUnderway = false;
         this.meta.isNSFW = false;
 
         this.additionalData = {};
