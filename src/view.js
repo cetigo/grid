@@ -327,7 +327,7 @@ class View {
     }
 
     revealProximity() {
-        for (var i = 5; i >= -5; i--) {
+        for (var i = 10; i >= -10; i--) {
             let targetPanel = this.panels[this.slideshow.position + i];
             if (targetPanel) targetPanel.reveal();
         }

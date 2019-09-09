@@ -115,8 +115,12 @@ class Parser {
             url: this.session.url,
             dataType: loadVariables.dataType,
 
-            success: () => {
-                const jsonParseAnswer = this.jsonParseAdapter(this.session.JSON.responseJSON, loadVariables.additionalData, loadType);
+            success: (rawData) => {
+                var jsonParseAnswer;
+                if (loadVariables.dataType == "xml")
+                    jsonParseAnswer = this.jsonParseAdapter(rawData, loadVariables.additionalData, loadType);
+                else
+                    jsonParseAnswer = this.jsonParseAdapter(this.session.JSON.responseJSON, loadVariables.additionalData, loadType);
 
                 if (!jsonParseAnswer) return false;
 
@@ -656,6 +660,44 @@ const loadHandler = {
                 dataType: "jsonp"
             }
         }
+    },
+
+    deviantart: {
+        filter: "deviantart.",
+        name: "deviantart",
+        description: "Shows all images in the users gallery. Supports loading subsequent pages. Usage example: Simply enter the full URLs, but it can be reduced to 'deviantart.user'",
+
+        method: function(inputArray) {
+            var deviantartUrl = inputArray[0];
+
+            var deviantartUser;
+            if (~deviantartUrl.indexOf(".com")) {
+                // Extract the Tumblr username from the URL
+                deviantartUser = new URL(deviantartUrl).pathname.split("/")[1];
+            } else {
+                // Or just clean up the input manually
+                deviantartUser = deviantartUrl.replace("deviantart.", "");
+            }
+
+            return {
+                url: 'https://backend.deviantart.com/rss.xml?q=gallery%3A' + deviantartUser,
+                rawinput: "deviantart." + deviantartUser,
+                docTitle: "deviantart." + deviantartUser + ' - Grid',
+                loadString: '<div id="loader">Loading <span style="color: ' + getRandomColor() + '" class="prefixspan">deviantart/</span>' + deviantartUser + '</div>',
+                additionalData: {
+                    deviantart: deviantartUser
+                },
+                favorite: {
+                    name: "deviantart/" + deviantartUser,
+                    type: 2
+                },
+                panels: [{
+                    onclick: 'extendPage()',
+                    html: 'Continue<br>Page ' + (core.parser.meta.page + 2) + '<br><span style="color: ' + getRandomColor() + '" class="prefixspan">deviantart.</span>' + deviantartUser + '</div>'
+                }],
+                dataType: "xml"
+            }
+        }
     }
 
 };
@@ -913,6 +955,40 @@ const jsonParseHandler = {
                     score: inputJSON.data.children[i].data.score,
                     author: inputJSON.data.children[i].data.author,
                     age: timeSinceDate(inputJSON.data.children[i].data.created_utc + '000')
+                }
+            });
+        };
+
+        core.parser.meta.pageLoadPossible = true;
+        return parsedReturn;
+    },
+
+    deviantart: function(inputXML, additionalData) {
+        //core.parser.session.lastUrl = inputJSON.data.after;
+        var parsedReturn = [];
+
+        var itemXml = inputXML.childNodes[0].childNodes[1].childNodes;
+        var items = [];
+
+        itemXml.forEach(function(elem) {
+            if (elem.nodeName == "item")
+                items.push(elem);
+        }); 
+
+
+        for (var i = 0; i < items.length; ++i) {
+            
+            var postTitle = items[i].querySelector("title").textContent;
+            var postIsNsfw = items[i].querySelector("rating").textContent == "adult";
+
+            if (postIsNsfw) 
+                core.parser.meta.isNSFW = true;
+
+            parsedReturn.push({
+                url: items[i].querySelector("content").attributes.url.value,
+                metadata: {
+                    title: postTitle,
+                    thumbUrl: items[i].querySelector("thumbnail").attributes.url.value
                 }
             });
         };

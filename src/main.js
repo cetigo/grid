@@ -645,7 +645,7 @@ function onPageExtensionEnd(success)
 function extendPage(invokeCallback) {
     if (!core.parser.meta.pageLoadPossible || core.parser.meta.pageLoadUnderway) return false;
 
-    core.parser.meta.page++;
+    ++core.parser.meta.page;
 
     if (core.parser.session.loadType === 'tumblr') {
         var tempUrl = core.parser.session.url + '&offset=' + (20 * core.parser.meta.page);
@@ -684,6 +684,41 @@ function extendPage(invokeCallback) {
                     class: 'panel-suggestion',
                     onclick: "extendPage()"
                 }).html('Continue<br>Page ' + (core.parser.meta.page + 2) + '<br>' + core.parser.additionalData.tumblr.replace('.tumblr.com', '') + '<span style="color: ' + getRandomColor() + ';" class="prefixspan">.tumblr</span>').appendTo('#results');
+            },
+
+            error: function (x, status, error) {
+                onPageExtension(false);
+            }
+
+        });
+        return;
+    }
+    else if (core.parser.session.loadType === 'deviantart')
+    {
+        var tempUrl = core.parser.session.url + '&offset=' + (60 * core.parser.meta.page);
+        onPageExtensionStart();
+
+        core.parser.session.JSON = $.ajax({
+            method: "get",
+            async: true,
+            url: tempUrl,
+            dataType: "xml",
+
+            success: function () {
+                onPageExtensionEnd(true);
+
+                loadController.show();
+                core.parser.jsonParseAdapter(core.parser.session.JSON.responseXML, {}, "deviantart");
+
+                core.view.initialize(true);
+                if (invokeCallback) core.view.switchSlideshow();
+                core.view.revealProximity();
+
+                // extendPage Card
+                $('<div/>', {
+                    class: 'panel-suggestion',
+                    onclick: "extendPage()"
+                }).html('Continue<br>Page ' + (core.parser.meta.page + 2) + '<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">deviantart.</span>' + core.parser.additionalData.deviantart).appendTo('#results');
             },
 
             error: function (x, status, error) {
