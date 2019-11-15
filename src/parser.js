@@ -66,9 +66,13 @@ class Parser {
 
         this.reset();
 
+        // first, check if the input is an URL, and if yes, possibly extract commands from it
+        input = this.parseCommandFromUrl(input);
+
+        this.session.rawCommand = input;
         this.session.command = input.split(' ');
         this.session.command[0] = this.session.command[0].toLowerCase();
-        this.session.rawCommand = input;
+
         if (parentLocation) this.session.parentLocation = parentLocation;
 
         if (commands[this.session.command[0]]) {
@@ -82,6 +86,31 @@ class Parser {
         }
         
         systemController.setHash(this.session.rawCommand);
+    }
+
+    parseCommandFromUrl(rawCommand) {
+        try {
+            const parsed_url = new URL(rawCommand);
+            
+            // it is an URL
+            let command_results = [];
+
+            $.each(loadHandler, (i, obj) => {
+                if (obj.isUrlMatching)
+                {
+                    if (obj.isUrlMatching(parsed_url))
+                    {
+                        command_results.push(obj.getCommandFromUrl(parsed_url));
+                    }
+                }
+            });
+
+            return command_results[0] || rawCommand;
+        } catch (err) {
+        }
+
+        // not an URL, or no matching load handler found
+        return rawCommand;
     }
 
     getLoadType(rawCommand) {
@@ -347,6 +376,21 @@ const loadHandler = {
         name: "reddit",
         description: "Shows all images on the front page of the specified subreddit. Supports loading subsequent pages, and filters that can be appended to the Subreddit, separated by a space. Usage example: 'earthporn 4'",
 
+        isUrlMatching: function(url)
+        {
+            if (url.hostname === "www.reddit.com")
+            {
+                const pathname_split = url.pathname.split("/");
+                if (pathname_split.length >= 3 && pathname_split[0] === "" && pathname_split[1] === "r")
+                    return true;
+            }
+            return false;
+        },
+        
+        getCommandFromUrl: function(url) {
+            return url.pathname.split("/")[2];
+        },
+
         method: function(inputArray) {
             core.parser.meta.subreddit = inputArray[0];
             var sortFilter = inputArray[1] || 0;
@@ -394,12 +438,12 @@ const loadHandler = {
 
             if (core.parser.meta.mode != 'top - ever') {
                 endPanels.push({
-                    onclick: "fetchJson('" + core.parser.meta.subreddit + " 1')",
+                    onclick: "executeCommand('" + core.parser.meta.subreddit + " 1')",
                     html: 'Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.meta.subreddit + '<br>top - ever'
                 });
             } else {
                 endPanels.push({
-                    onclick: "fetchJson('" + core.parser.meta.subreddit + " 4')",
+                    onclick: "executeCommand('" + core.parser.meta.subreddit + " 4')",
                     html: 'Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.meta.subreddit + '<br>top - week'
                 });
             }
@@ -427,7 +471,7 @@ const loadHandler = {
             for (var i = core.parser.misc.xpostMentions.length - 1; i >= 0; i--) {
 
                 additionalCards.push({
-                    onclick: "fetchJson('" + core.parser.misc.xpostMentions[i] + "')",
+                    onclick: "executeCommand('" + core.parser.misc.xpostMentions[i] + "')",
                     html: 'Mentioned here<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.misc.xpostMentions[i]
                 });
 
@@ -444,7 +488,7 @@ const loadHandler = {
                 var randomRecommendation = recommendationArray[Math.floor(Math.random() * recommendationArray.length)];
 
                 additionalCards.push({
-                    onclick: "fetchJson('" + randomRecommendation + "')",
+                    onclick: "executeCommand('" + randomRecommendation + "')",
                     html: 'Recommended<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + randomRecommendation
                 });
             }
@@ -462,7 +506,7 @@ const loadHandler = {
                 }
                 for (var i = relatedRedditNames.length - 1; i >= 0; i--) {
                     additionalCards.push({
-                        onclick: "fetchJson('" + relatedRedditNames[i] + "')",
+                        onclick: "executeCommand('" + relatedRedditNames[i] + "')",
                         html: 'Also try<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + relatedRedditNames[i]
                     });
 

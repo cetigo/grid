@@ -207,12 +207,12 @@ const loadHandler = {
 
             if (instanceParser.meta.mode != 'top - ever') {
                 endPanels.push({
-                    onclick: "fetchJson('" + instanceParser.meta.subreddit + " 1')",
+                    onclick: "executeCommand('" + instanceParser.meta.subreddit + " 1')",
                     html: 'Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + instanceParser.meta.subreddit + '<br>top - ever'
                 });
             } else {
                 endPanels.push({
-                    onclick: "fetchJson('" + instanceParser.meta.subreddit + " 4')",
+                    onclick: "executeCommand('" + instanceParser.meta.subreddit + " 4')",
                     html: 'Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + instanceParser.meta.subreddit + '<br>top - week'
                 });
             }
@@ -240,7 +240,7 @@ const loadHandler = {
             for (var i = instanceParser.misc.xpostMentions.length - 1; i >= 0; i--) {
 
                 additionalCards.push({
-                    onclick: "fetchJson('" + instanceParser.misc.xpostMentions[i] + "')",
+                    onclick: "executeCommand('" + instanceParser.misc.xpostMentions[i] + "')",
                     html: 'Mentioned here<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + instanceParser.misc.xpostMentions[i]
                 });
 
@@ -259,7 +259,7 @@ const loadHandler = {
                 var randomRecommendation = recommendationArray[Math.floor(Math.random() * recommendationArray.length)];
 
                 additionalCards.push({
-                    onclick: "fetchJson('" + randomRecommendation + "')",
+                    onclick: "executeCommand('" + randomRecommendation + "')",
                     html: 'Recommended<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + randomRecommendation
                 });
             }
@@ -280,7 +280,7 @@ const loadHandler = {
              }
              for (var i = relatedRedditNames.length - 1; i >= 0; i--) {
              additionalCards.push({
-             onclick: "fetchJson('" + relatedRedditNames[i] + "')",
+             onclick: "executeCommand('" + relatedRedditNames[i] + "')",
              html: 'Also try<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + relatedRedditNames[i]
              });
 

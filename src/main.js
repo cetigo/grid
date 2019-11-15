@@ -228,7 +228,7 @@ var commands = {
 
                 $('<div/>', {
                     class: 'panel-suggestion panel-favorite',
-                    onclick: "fetchJson('" + obj + "')"
+                    onclick: "executeCommand('" + obj + "')"
                 })
                     .html('<div class="panel-label">' + obj + '</div><div class="panel-background" style="background-image: url(' + favorites[obj].thumb + ')"></div>')
                     .appendTo('#results');
@@ -244,19 +244,19 @@ var commands = {
 
             $('<div/>', {
                 class: 'panel-suggestion panel-favorite',
-                onclick: "fetchJson('reel')"
+                onclick: "executeCommand('reel')"
             }).html('reel').appendTo('#results');
             $('<div/>', {
                 class: 'panel-suggestion panel-favorite',
-                onclick: "fetchJson('custom')"
+                onclick: "executeCommand('custom')"
             }).html(Object.keys(customMode.data).length + ' custom').appendTo('#results');
             $('<div/>', {
                 class: 'panel-suggestion panel-favorite',
-                onclick: "fetchJson('help')"
+                onclick: "executeCommand('help')"
             }).html('help').appendTo('#results');
             $('<div/>', {
                 class: 'panel-suggestion panel-favorite',
-                onclick: "fetchJson('options')"
+                onclick: "executeCommand('options')"
             }).html('options').appendTo('#results');
 
             $('.panel-suggestion:odd').each(function () {
@@ -284,7 +284,7 @@ var commands = {
 
                 $('#results').html(' ').append('<div class="panel panel-help"><h1>Advanced Help</h1><br><h2>Additional Features</h2>The following parse modules are currently installed:<br><br>' + handlerListString + 'Type <pre>reel</pre> to enter Reel Mode, a continuous, random image slideshow. It has no overview, unlike the usual views, and goes on indefinitely by fetching new random images during progression. You can specify sources by separating them with commas like this:<br><pre>reel cats 1, voat/gifs, 4chan/w/</pre><br>The sources behave like they do everywhere else, and also support filters if they are reddit sources. By default, the top 50 subreddits will be used, either from the NSFW or SFW category, depending on your settings. Like in any slideshow, you can press <pre>&darr;</pre> to save images to Custom Mode.<br><br>Type <pre>custom</pre> to enter Custom Mode. There, enter URLs to add images to the page. Pressing <pre>&darr;</pre> when in Slideshow view here will remove the image from Custom Mode. You can type <pre>/save</pre> to export a string that can be imported to reload the setup. Use <pre>/dl</pre> to download all images and videos on the page.<br><br><h2>Options</h2><b>Show Help</b><br>Shows a slim bar at the bottom which explains contextual keyboard commands.<br><br><b>Show NSFW content</b><br>While turned off, content that is self-declared NSFW will be blocked. Also affects Reel Mode and the random subreddit accessed with #.<br><br><b>Show Info</b><br>Displays Post Points, Age and submitting User when viewing images in the Slideshow.<br><br><b>Render HTML5 Video</b><br>While turned off, .webm and .mp4 videos won\'t be rendered. Can reduce hardware load.<br><br><b>Low Resolution</b><br>Activate to load smaller versions of imgur images. Can reduce bandwith usage.<br><br><b>Allow all Sources</b><br>While turned off, only imgur and gfycat links will be rendered. Renders many features broken if disabled.<br><br><b>Reset</b><br>Delete Favorites, History, Custom Mode and all data in your Localstorage.<br><br><br><h2>Technical Details</h2>Grid pulls data via AJAX calls from your client, there is no server-side code. It is only limited by your hardware and connection speed.<br><br>Grid might partially or completely break on older browsers. It is being developed on the latest WebKit browsers (Chrome, Safari), and probably works best on them. There is very barebones mobile support (Swipe gestures mimic arrow keys on a desktop), but mobile is not a priority.<br><br><a href="https://github.com/cetigo/grid" target="_blank">View Grid on Github</a></div>');
             } else {
-                $('#results').html(' ').append('<div class="panel panel-help"><h1>Help</h1><h2>Controls</h2><pre>CTRL</pre> or <pre>ALT</pre><span>Enter / Exit Slideshow</span><br><pre>&larr;</pre> <pre>&rarr;</pre><span>Navigate images</span><br><pre>&uarr;</pre> <pre>&darr;</pre><span>Switch between input and images</span><br><pre>Space</pre><span>On last image - Load next page</span><br><br><pre>&uarr;</pre> <span>In the text field - Access menu</span><br><pre>&uarr;</pre> <span>During Slideshow - Access Album</span><br><pre>&darr;</pre><span>During Slideshow - Save to custom</span><br><pre>C</pre><span>During Slideshow - Toggle Autoplay</span><br><br><h2>Commands</h2><pre>#</pre><span>Random subreddit</span><br><pre>/dl</pre><span>Download all Images on the Page</span><br><pre>custom</pre><span>Overview of saved images</span><br><pre>reel</pre><span>Endless random image slideshow</span><br><pre>options</pre><span>Change settings or clear your history</span><br><pre> </pre> (empty)<span>Dashboard / Favorites</span><br><br><br>Append a number to the subreddit to filter:<br><pre>cats 1</pre> - Top of all Time<br><pre>cats 2</pre> - Top of the Year<br><pre>cats 3</pre> - Top of the Month<br><pre>cats 4</pre> - Top of the Week<br><br>String subreddits together:<br><pre>animals + aww + pics</pre><br><br>Version ' + versionNumber + '<div class="panel-help-link" onclick="fetchJson(\'help 1\')">Advanced Features</div><br></div>');
+                $('#results').html(' ').append('<div class="panel panel-help"><h1>Help</h1><h2>Controls</h2><pre>CTRL</pre> or <pre>ALT</pre><span>Enter / Exit Slideshow</span><br><pre>&larr;</pre> <pre>&rarr;</pre><span>Navigate images</span><br><pre>&uarr;</pre> <pre>&darr;</pre><span>Switch between input and images</span><br><pre>Space</pre><span>On last image - Load next page</span><br><br><pre>&uarr;</pre> <span>In the text field - Access menu</span><br><pre>&uarr;</pre> <span>During Slideshow - Access Album</span><br><pre>&darr;</pre><span>During Slideshow - Save to custom</span><br><pre>C</pre><span>During Slideshow - Toggle Autoplay</span><br><br><h2>Commands</h2><pre>#</pre><span>Random subreddit</span><br><pre>/dl</pre><span>Download all Images on the Page</span><br><pre>custom</pre><span>Overview of saved images</span><br><pre>reel</pre><span>Endless random image slideshow</span><br><pre>options</pre><span>Change settings or clear your history</span><br><pre> </pre> (empty)<span>Dashboard / Favorites</span><br><br><br>Append a number to the subreddit to filter:<br><pre>cats 1</pre> - Top of all Time<br><pre>cats 2</pre> - Top of the Year<br><pre>cats 3</pre> - Top of the Month<br><pre>cats 4</pre> - Top of the Week<br><br>String subreddits together:<br><pre>animals + aww + pics</pre><br><br>Version ' + versionNumber + '<div class="panel-help-link" onclick="executeCommand(\'help 1\')">Advanced Features</div><br></div>');
             }
         },
         description: "Read about controls and functionalities"
@@ -765,12 +765,12 @@ function extendPage(invokeCallback) {
             if (core.parser.meta.mode != 'top - ever') {
                 $('<div/>', {
                     class: 'panel-suggestion',
-                    onclick: "fetchJson('" + core.parser.meta.subreddit + " 1')"
+                    onclick: "executeCommand('" + core.parser.meta.subreddit + " 1')"
                 }).html('Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.meta.subreddit + '<br>top - ever').appendTo('#results');
             } else {
                 $('<div/>', {
                     class: 'panel-suggestion',
-                    onclick: "fetchJson('" + core.parser.meta.subreddit + " 4')"
+                    onclick: "executeCommand('" + core.parser.meta.subreddit + " 4')"
                 }).html('Switch to <br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.meta.subreddit + '<br>top - month').appendTo('#results');
             }
 
@@ -778,7 +778,7 @@ function extendPage(invokeCallback) {
             for (var i = core.parser.misc.xpostMentions.length - 1; i >= 0; i--) {
                 $('<div/>', {
                     class: 'panel-suggestion',
-                    onclick: "fetchJson('" + core.parser.misc.xpostMentions[i] + "')"
+                    onclick: "executeCommand('" + core.parser.misc.xpostMentions[i] + "')"
                 }).html('Mentioned here<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + core.parser.misc.xpostMentions[i]).appendTo('#results');
             }
 
@@ -789,7 +789,7 @@ function extendPage(invokeCallback) {
 
                     $('<div/>', {
                         class: 'panel-suggestion',
-                        onclick: "fetchJson('" + randomRecommendation + "')"
+                        onclick: "executeCommand('" + randomRecommendation + "')"
                     }).html('Recommended<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + randomRecommendation).appendTo('#results');
                 }
             } else {
@@ -798,7 +798,7 @@ function extendPage(invokeCallback) {
 
                     $('<div/>', {
                         class: 'panel-suggestion',
-                        onclick: "fetchJson('" + randomRecommendation + "')"
+                        onclick: "executeCommand('" + randomRecommendation + "')"
                     }).html('Recommended<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">/r/</span>' + randomRecommendation).appendTo('#results');
                 }
             }
@@ -1573,7 +1573,7 @@ var customController = {
 
             $('<div/>', {
                 class: 'panel-suggestion',
-                onclick: "fetchJson('/loadup " + String(i) + "')"
+                onclick: "executeCommand('/loadup " + String(i) + "')"
             })
                 .html(
                     '<div class="panel-label">Backup ' + String(i) + '<br><span style="color: ' + getRandomColor() + ';" class="prefixspan">' + elementCount + '</span> Elements</div>' + '<div class="panel-thumb-wrap">' + thumbElem + '</div>'
