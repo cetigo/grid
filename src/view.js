@@ -628,7 +628,7 @@ class View {
     focusHighlight(overwriteIndex) {
 
         if (typeof overwriteIndex !== 'undefined') {
-            if (overwriteIndex > (this.slideshow.length - 1)) overwriteIndex = (this.slideshow.length - 1);
+            overwriteIndex = min(overwriteIndex, this.slideshow.length - 1);
             this.slideshow.position = overwriteIndex;
             this.activateHighlight(true);
         }

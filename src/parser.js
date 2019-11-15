@@ -133,7 +133,7 @@ class Parser {
                 }
 
                 //if (loadVariables.favorite) favoriteHandler(loadVariables.favorite.name, core.view.panels[0].imageUrl, loadVariables.favorite.type);
-                favoriteHandler(this.session.rawCommand, core.view.panels[0].imageUrl, 1)
+                createOrUpdateFavoriteEntry(this.session.rawCommand, core.view.panels[0].imageUrl, 1)
 
             },
 

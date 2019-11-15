@@ -144,7 +144,7 @@ var commands = {
     },
     "/array": {
         method: function (args) {
-            core.input.setValue(arrayFetch());
+            core.input.setValue(getSerializedPanels());
             core.input.focus();
         },
         description: "Get a JSON array of the current page"
@@ -185,9 +185,9 @@ var commands = {
     "#": {
         method: function (args) {
             if (settings.showNSFW) {
-                fetchJson(recommendationsNsfw[getRandomInt(0, recommendationsNsfw.length - 1)]);
+                executeCommand(recommendationsNsfw[getRandomInt(0, recommendationsNsfw.length - 1)]);
             } else {
-                fetchJson(recommendationsSfw[getRandomInt(0, recommendationsSfw.length - 1)]);
+                executeCommand(recommendationsSfw[getRandomInt(0, recommendationsSfw.length - 1)]);
             }
         },
         description: "Enter a random Subreddit"
@@ -369,7 +369,7 @@ var commands = {
 var customCommands = {
     "/array": {
         method: function (args) {
-            core.input.setValue(arrayFetch());
+            core.input.setValue(getSerializedPanels());
             core.input.focus();
         },
         description: "Get a JSON array of the current page"
@@ -811,7 +811,38 @@ function extendPage(invokeCallback) {
     });
 }
 
-function customModeParse(input, customSrcBlob, customType) {
+function onCustomModeFileAdd(src_blob, type)
+{
+    if (type.substr(0, 5) == "image") {
+        core.view.appendPanel({
+            imageUrl: src_blob
+        });
+    } 
+    else if (type.substr(0, 5) == "video") {
+        core.view.appendPanel({
+            contentType: 2,
+            webmUrl: src_blob
+        });
+    }
+    else
+    {
+        return;
+    }
+
+    core.view.initialize();
+
+    // Blobs will not be saved nor outputted when calling /save. There would be no reasonable way to do this since they expire on refresh.
+    customMode.data[customMode.counter] = {
+        url: type.substr(0, 5) + src_blob,
+        title: "",
+        id: customMode.counter
+    };
+    customMode.counter++;
+    saveToLocalstorage();
+    core.input.clear();
+}
+
+function customModeParse(input) {
 
     var commands = input.split(' ');
     commands[0] = commands[0].toLowerCase();
@@ -822,33 +853,6 @@ function customModeParse(input, customSrcBlob, customType) {
     }
 
     $('.panel.panel-help').remove();
-
-    // On Image DragnDrop
-    if (customSrcBlob) {
-        if (customType.substr(0, 5) == "image") {
-            core.view.appendPanel({
-                imageUrl: customSrcBlob
-            });
-        } else if (customType.substr(0, 5) == "video") {
-            core.view.appendPanel({
-                contentType: 2,
-                webmUrl: customSrcBlob
-            });
-        }
-
-        core.view.initialize();
-
-        // Blobs will not be saved nor outputted when calling /save. There would be no reasonable way to do this since they expire on refresh.
-        customMode.data[customMode.counter] = {
-            url: customType.substr(0, 5) + customSrcBlob,
-            title: "",
-            id: customMode.counter
-        };
-        customMode.counter++;
-        saveToLocalstorage();
-        core.input.clear();
-        return;
-    }
 
     // Load a save
     if (commands[0].substr(0, 2) == '--') {
@@ -897,26 +901,35 @@ function customModeParse(input, customSrcBlob, customType) {
     // Neither a command, a save or an URL was entered. Leave Custom Mode and pass input to fetchJson.
     var passthroughString = commands[0] + (typeof commands[1] !== "undefined" ? ' ' + commands[1] : "");
     customController.leave(passthroughString);
-
 }
 
-function fetchJson(override, customSrcBlob, customType) {
-    var rawCommand;
+// Command execution, the main form of control over this application
+function executeCommand(rawCommand) {
+    rawCommand = rawCommand.trim();
 
-    if (override) {
-        rawCommand = override.trim();
-        if (rawCommand === 'home') rawCommand = '';
-    } else {
-        rawCommand = core.input.getValue().trim().replace("%20", " ");
-    }
+    // Home is just hardcoded to shorten to "" (nothing)
+    if (rawCommand === 'home') 
+        rawCommand = '';
 
+    // Leave any album or slideshow
     if (core.view.album.active) core.view.accessAlbum();
     if (core.view.slideshow.active) core.view.quitSlideshow();
 
-    if (system.customMode) customModeParse(rawCommand, customSrcBlob, customType);
-    else {
+    // Delegate to either custom mode or the parser
+    if (system.customMode) 
+    {
+        customModeParse(rawCommand);
+    }
+    else 
+    {
         core.parser.parse(rawCommand);
     }
+}
+
+// Called when the DOM form submits
+function onMainInputSubmit()
+{
+    executeCommand(core.input.getValue().trim().replace("%20", " "));
 }
 
 /* ----- UI Controllers ----- */
@@ -1319,8 +1332,15 @@ function detectUrl(inputUrl, inputOptions, callback, returnRaw) {
 
 /* ----- General Behaviour ----- */
 
-function saveToCustom() {
+// Called in slideshows, when the down arrow is pressed
+function onSlideshowSaveAction() {
     if (!core.view.slideshow.active && !core.view.mode.reel || core.view.album.active) return;
+
+    if (system.customMode)
+    {
+        customController.removeCurrentPanel();
+        return;
+    }
 
     let gatheredTitle = '';
     let gatheredUrl = '';
@@ -1332,8 +1352,7 @@ function saveToCustom() {
         gatheredTitle = core.view.activePanel.title;
     }
 
-    if (system.customMode) customController.removeImage(gatheredUrl);
-    else customController.storeImage(gatheredUrl, gatheredTitle);
+    customController.storeImage(gatheredUrl, gatheredTitle);
 
     saveToLocalstorage();
 }
@@ -1497,7 +1516,7 @@ var customController = {
         core.input.clear();
         core.input.changePlaceholder('Enter a Command');
 
-        fetchJson(passthroughCommand);
+        executeCommand(passthroughCommand);
     },
 
     backup: function (i) {
@@ -1512,7 +1531,7 @@ var customController = {
         customMode.backupActive = i;
 
         core.input.setValue('');
-        fetchJson('/loadup');
+        executeCommand('/loadup');
     },
 
     refreshBackup: function () {
@@ -1608,21 +1627,34 @@ var customController = {
         saveToLocalstorage();
     },
 
-    removeImage: function (url) {
-        var gatheredCustomImage = _.findKey(customMode.data, function (e) {
-            return e.url == url;
-        });
+    getNthKey: function(index)
+    {
+        return Object.keys(customMode.data)[index];
+    },
 
-        var currentSlideshowPosition = core.view.slideshow.position;
+    removePanel: function(index) {
+        const key = this.getNthKey(index);
+        if (key !== undefined)
+        {
+            delete customMode.data[key];
+            core.view.quitSlideshow();
+            outputMessage("<b>Removed</b> from custom", "red quickmsg");
 
-        delete customMode.data[gatheredCustomImage];
+            var renderAnswer = this.render();
+            if (renderAnswer) 
+                core.view.focusHighlight(index);
 
-        core.view.quitSlideshow();
-        outputMessage("<b>Removed</b> from custom", "red quickmsg");
+            this.refreshBackup();
+        }
+        else
+        {
+            console.log("Attempted to remove custom panel out of bounds (" + index + ")");
+        }
+    },
 
-        var renderAnswer = this.render();
-        if (renderAnswer) core.view.focusHighlight(currentSlideshowPosition);
-        this.refreshBackup();
+    removeCurrentPanel: function()
+    {
+        this.removePanel(core.view.slideshow.position);
     },
 
     storeImage: function (url, title) {
@@ -1819,10 +1851,10 @@ var systemController = {
         }
     },
 
-    checkHash: function () {
+    onHashChange: function () {
         var newHash = this.readHash();
         if (newHash !== this.vars.currentHash) {
-            fetchJson(newHash);
+            executeCommand(newHash);
         } else {
             return false;
         }
@@ -1834,9 +1866,9 @@ var systemController = {
         if (foundHash) {
             if (foundHash === 'jri') {
                 settings.showNSFW = true;
-                fetchJson('reel');
+                executeCommand('reel');
             } else {
-                fetchJson(foundHash);
+                executeCommand(foundHash);
             }
         }
     },
@@ -1944,9 +1976,9 @@ var uiController = {
 
         if (!isNaN(numberCheck)) {
             // Its a number, filter the current page
-            fetchJson(core.parser.meta.subreddit + ' ' + currentOption);
+            executeCommand(core.parser.meta.subreddit + ' ' + currentOption);
         } else {
-            fetchJson(currentOption);
+            executeCommand(currentOption);
         }
 
         this.hideMenu();
@@ -1987,10 +2019,10 @@ function inputCheck(elem) {
     }
 }
 
-function toggleHighlight(inverse) {
+function onVerticalInput(is_down_input) {
 
     // DOWN ARROW
-    if (inverse) {
+    if (is_down_input) {
 
         // Always deactivate the menu if its active
         if (system.menuActive) {
@@ -2006,7 +2038,7 @@ function toggleHighlight(inverse) {
         // Reel Mode
         if (core.view.mode.reel) {
             if (core.view.slideshow.highlightingActive) {
-                saveToCustom();
+                onSlideshowSaveAction();
             } else {
                 core.view.slideshow.highlightingActive = true;
                 core.input.blur();
@@ -2016,7 +2048,7 @@ function toggleHighlight(inverse) {
 
         // Save to Custom
         if (core.view.slideshow.active) {
-            saveToCustom();
+            onSlideshowSaveAction();
             return;
         }
 
@@ -2028,6 +2060,7 @@ function toggleHighlight(inverse) {
         // Activate Highlighting
         if (!core.view.slideshow.highlightingActive) {
             core.view.activateHighlight();
+            return;
         }
 
     }
@@ -2060,6 +2093,7 @@ function toggleHighlight(inverse) {
         // Disable Highlighting
         if (core.view.slideshow.highlightingActive) {
             core.view.disableHighlight();
+            return;
         }
     }
 
@@ -2095,7 +2129,8 @@ function autoplaySlideShow(forceStop) {
 
 /* ----- History and LocalStorage ----- */
 
-function arrayFetch() {
+// Returns a JSON of currently visible panels, [{url, title}, ...]
+function getSerializedPanels() {
 
     var arrayFetchReturn = [];
 
@@ -2161,7 +2196,7 @@ function saveToLocalstorage() {
     }
 }
 
-function favoriteHandler(name, thumbnail, type) {
+function createOrUpdateFavoriteEntry(name, thumbnail, type) {
     var favoriteType = type || 1;
 
     if (favorites[name]) {
@@ -2281,12 +2316,12 @@ $(function () {
                 if (core.view.slideshow.active) {
                     core.view.inspectSlideshow();
                 } else {
-                    toggleHighlight(false);
+                    onVerticalInput(false);
                 }
                 break;
             case 40:
                 // Down Arrow
-                toggleHighlight(true);
+                onVerticalInput(true);
                 e.preventDefault();
                 break;
             case 27: // Command
@@ -2327,7 +2362,7 @@ $(function () {
     };
 
     window.onhashchange = function () {
-        systemController.checkHash();
+        systemController.onHashChange();
     };
 
     window.onresize = function () {
@@ -2366,16 +2401,16 @@ $(function () {
     systemController.initHash();
 
     if (localFavorites) {
-        var favoriteCheck = JSON.parse(localFavorites);
+        var loaded_favorites = JSON.parse(localFavorites);
 
-        if (typeof favoriteCheck === "array") {
+        if (typeof loaded_favorites === "array") {
             outputMessage("Favorites are in an obsolete format");
         } else {
-            favorites = favoriteCheck;
+            favorites = loaded_favorites;
         }
 
         if (system.untouched) {
-            fetchJson("");
+            executeCommand("");
         }
     }
 
@@ -2383,17 +2418,17 @@ $(function () {
     if (window.File && window.FileList && window.FileReader) {
         var xhr = new XMLHttpRequest();
         if (xhr.upload) {
-            $(document).on("dragover", dragCancel);
-            $(document).on("dragenter", dragCancel);
-            $(document).on("drop", fileDragHandler);
+            $(document).on("dragover", eventCancellor);
+            $(document).on("dragenter", eventCancellor);
+            $(document).on("drop", onFileDrop);
         }
     }
 
     // Swipe Gestures Initialization
-    document.addEventListener('touchstart', swipeGestureHandler.handleTouchStart, false);
-    document.addEventListener('touchmove', swipeGestureHandler.handleTouchMove, false);
-    document.addEventListener('touchend', swipeGestureHandler.handleTouchEnd, false);
-    document.addEventListener('touchcancel', swipeGestureHandler.handleTouchCancel, false);
+    document.addEventListener('touchstart', swipeGestureHandler.onTouchStart, false);
+    document.addEventListener('touchmove', swipeGestureHandler.onTouchMove, false);
+    document.addEventListener('touchend', swipeGestureHandler.onTouchEnd, false);
+    document.addEventListener('touchcancel', swipeGestureHandler.onTouchCancel, false);
 });
 
 /* ----- Mobile Swipe Gestures ----- */
@@ -2415,12 +2450,12 @@ const swipeGestureHandler = {
         swipeGestureHandler.vars.properSwipe = false;
     },
 
-    handleTouchStart: function (evt) {
+    onTouchStart: function (evt) {
         swipeGestureHandler.vars.xDown = evt.touches[0].clientX;
         swipeGestureHandler.vars.yDown = evt.touches[0].clientY;
     },
 
-    handleTouchMove: function (evt) {
+    onTouchMove: function (evt) {
         if (!swipeGestureHandler.vars.xDown || !swipeGestureHandler.vars.yDown) return;
 
         var xUp = evt.touches[0].clientX;
@@ -2451,12 +2486,12 @@ const swipeGestureHandler = {
                     core.view.inspectSlideshow();
                 } else {
                     // Down swipe
-                    toggleHighlight(true);
+                    onVerticalInput(true);
                 }
             }
             else if (core.view.mode.reel && yDiff < 0) {
                 // Down swipe in reel
-                toggleHighlight(true);
+                onVerticalInput(true);
             }
             else {
                 properSwipe = false;
@@ -2473,14 +2508,14 @@ const swipeGestureHandler = {
         }
     },
 
-    handleTouchEnd: function (evt) {
+    onTouchEnd: function (evt) {
         if (swipeGestureHandler.vars.properSwipe)
             evt.preventDefault();
         swipeGestureHandler.reset();
         swipeGestureHandler.endSwipe();
     },
 
-    handleTouchCancel: function (evt) {
+    onTouchCancel: function (evt) {
         swipeGestureHandler.reset();
         swipeGestureHandler.endSwipe();
     }
@@ -2488,27 +2523,31 @@ const swipeGestureHandler = {
 
 /* ----- Drag and Drop ----- */
 
-function dragCancel(e) {
+function eventCancellor(e) {
     if (e.preventDefault) e.preventDefault();
     return false;
 }
 
-function fileDragHandler(e) {
+function onFileDrop(e) {
     e = e || window.event;
     if (e.preventDefault) {
         e.preventDefault();
     }
-    var notInCustom = false;
-    var files = e.originalEvent.dataTransfer.files;
-    for (var i = files.length - 1; i >= 0; i--) {
-        var src = createObjectURL(files[i]);
-        if (system.customMode) {
-            fetchJson(false, src, files[i].type);
-        } else {
-            notInCustom = true;
-        }
+
+    if (!system.customMode)
+    {
+        outputMessage("You can only insert images in Custom Mode");
+        return false;
     }
-    if (notInCustom) outputMessage("You can only insert images in Custom Mode");
+
+    const files = e.originalEvent.dataTransfer.files;
+
+    for (var i = 0; i < files.length; ++i)
+    {
+        const src = createObjectURL(files[i]);
+        onCustomModeFileAdd(src, files[i].type);
+    }
+    
     return false;
 }
 
