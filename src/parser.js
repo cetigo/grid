@@ -35,6 +35,13 @@ class Parser {
         };
 
         this.workers = {};
+
+        this.live_search = {};
+        this.autocomplete_state = {
+            highlighted: false,
+            index: 0,
+            command_array: []
+        };
     }
 
     reset() {
@@ -60,6 +67,11 @@ class Parser {
         this.misc.xpostMentions.length = 0;
         this.misc.selfpostURLs = {};
 
+        this.live_search = {};
+
+        this.autocomplete_state.highlighted = false;
+        this.autocomplete_state.index = 0;
+        this.autocomplete_state.command_array = [];
     }
 
     parse(input, parentLocation) {

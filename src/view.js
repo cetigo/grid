@@ -146,7 +146,7 @@ class View {
         this.mode.special = false;
         helpController.show();
         loadController.show();
-        if (!noPositionReset) this.slideshow.position = this.panels[0].domId;
+        if (!noPositionReset && this.panels.length > 0) this.slideshow.position = this.panels[0].domId;
         this.refreshLength();
         if (this.loading.fetchLength === 0) loadController.updateProgress(100, 'fetch');
 

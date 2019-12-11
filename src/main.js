@@ -905,6 +905,8 @@ function customModeParse(input) {
 
 // Command execution, the main form of control over this application
 function executeCommand(rawCommand) {
+    clearAutocomplete();
+
     rawCommand = rawCommand.trim();
 
     // Home is just hardcoded to shorten to "" (nothing)
@@ -2017,7 +2019,7 @@ function inputCheck(elem) {
         // Here we could possibly show some message explaining what the command would do if entered
         console.log(commands[inputText].description);
     }
-}
+} 
 
 function onVerticalInput(is_down_input) {
 
@@ -2057,10 +2059,38 @@ function onVerticalInput(is_down_input) {
             return;
         }
 
-        // Activate Highlighting
-        if (!core.view.slideshow.highlightingActive) {
-            core.view.activateHighlight();
-            return;
+        if (!core.view.slideshow.highlightingActive) 
+        {
+            if (core.parser.autocomplete_state.command_array.length > 0)
+            {
+                // autocomplete available, go through it
+                if (!core.parser.autocomplete_state.highlighted)
+                {
+                    core.input.blur();
+                    core.parser.autocomplete_state.highlighted = true;
+                    core.parser.autocomplete_state.index = 0;
+                }
+                else
+                {
+                    ++core.parser.autocomplete_state.index;
+                    if (core.parser.autocomplete_state.index == core.parser.autocomplete_state.command_array.length)
+                    {
+                        // out of the autocomplete, into highlight again
+                        clearAutocomplete();
+                        core.view.activateHighlight();
+                        return;
+                    }
+                }
+
+                updateAutocompleteFocus();
+                return;
+            }
+            else
+            {
+                // no autocomplete available, always enable highlight
+                core.view.activateHighlight();
+                return;
+            }
         }
 
     }
@@ -2070,8 +2100,32 @@ function onVerticalInput(is_down_input) {
 
         if (!core.view.slideshow.highlightingActive) {
             if (!system.menuActive) {
-                uiController.showMenu();
-            } else {
+
+                if (core.parser.autocomplete_state.highlighted)
+                {
+                    // inside autocomplete
+                    if (core.parser.autocomplete_state.index == 0)
+                    {
+                        // leaving autocomplete
+                        core.parser.autocomplete_state.highlighted = false;
+                        core.input.focus();
+                    }
+                    else
+                    {
+                        // going one up inside autocomplete
+                        --core.parser.autocomplete_state.index;
+                    }
+
+                    updateAutocompleteFocus();
+                }
+                else
+                {
+                    // outside autocomplete, menu activate
+                    uiController.showMenu();
+                }
+            } 
+            else 
+            {
                 uiController.switchMenuState();
             }
 
@@ -2229,6 +2283,66 @@ function createOrUpdateFavoriteEntry(name, thumbnail, type) {
     }
 }
 
+function clearAutocomplete()
+{
+    core.parser.autocomplete_state.highlighted = false;
+    core.parser.autocomplete_state.index = 0;
+    core.parser.autocomplete_state.command_array = [];
+    $('#wrapper-autocomplete').html('');
+}
+
+function updateAutocompleteFocus()
+{
+    $('#wrapper-autocomplete .active').removeClass('active');
+
+    if (core.parser.autocomplete_state.highlighted)
+        $('#wrapper-autocomplete').children().eq(core.parser.autocomplete_state.index).addClass('active');
+}
+
+function onTextInput(input_string)
+{
+    if (input_string.length < 3)
+    {
+        clearAutocomplete();
+        return;
+    }
+
+    core.parser.live_search = $.ajax({
+        method: "get",
+        async: true,
+        url: "https://www.reddit.com/subreddits/search.json?q=" + input_string + (settings.showNSFW ? "&include_over_18=on" : ""),
+        dataType: "json",
+
+        success: function () {
+            if (core.parser.live_search.status === 200)
+            {
+                clearAutocomplete();
+                const response_data = core.parser.live_search.responseJSON.data;
+                const num_results = Math.min(response_data.children.length, 5);
+
+                const autocomplete_parent = $('#wrapper-autocomplete');
+
+                core.parser.autocomplete_state.command_array = [];
+                for (var i = 0; i < num_results; ++i)
+                {
+                    const elem = response_data.children[i].data;
+                    
+                    $('<div/>', {class: 'autocomplete-elem'})
+                        .html(
+                            "<span>/r/</span>" + elem.display_name + " - " + elem.title + " (" + elem.subscribers + ")"    
+                        )
+                        .appendTo(autocomplete_parent);
+
+                    core.parser.autocomplete_state.command_array.push(elem.display_name);
+                }
+            }
+        },
+
+        error: function (x, status, error) {
+        }
+
+    });
+}
 
 $(function () {
 
@@ -2271,6 +2385,11 @@ $(function () {
                 // Enter
                 if (system.menuActive) {
                     uiController.performMenuAction();
+                    e.preventDefault();
+                }
+                else if (core.parser.autocomplete_state.highlighted)
+                {
+                    executeCommand(core.parser.autocomplete_state.command_array[core.parser.autocomplete_state.index]);
                     e.preventDefault();
                 }
                 break;
@@ -2338,7 +2457,6 @@ $(function () {
             default:
                 break;
         }
-
     });
 
     $(document).keyup(function (e) {
@@ -2350,6 +2468,10 @@ $(function () {
          if (e.which == 38) { $('#arrow-indicator-up').removeClass('active'); }
          };
          */
+        if (!core.view.slideshow.active && core.input.hasValueChanged())
+        {
+            onTextInput(core.input.getValue());
+        }
     });
 
     preloadImages(['./images/x.png', './images/xl.png', './images/p.png', './images/pl.png']);

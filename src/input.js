@@ -3,16 +3,25 @@
  */
 
 class Input {
+    
+    current_value = "";
+
     constructor() {
         this.elem = $('#grid-input');
     }
 
     getValue() {
-        return this.elem.val();
+        this.current_value = this.elem.val();
+        return this.current_value;
+    }
+
+    hasValueChanged() {
+        return this.current_value != this.elem.val();
     }
 
     setValue(string) {
-        this.elem.val(string);
+        this.current_value = string;
+        this.elem.val(this.current_value);
     }
 
     clear() {
