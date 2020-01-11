@@ -2021,6 +2021,67 @@ function inputCheck(elem) {
     }
 } 
 
+function handleAutocomplete(is_down_input)
+{
+    if (is_down_input)
+    {
+        if (core.parser.autocomplete_state.command_array.length > 0)
+        {
+            // autocomplete available, go through it
+            if (!core.parser.autocomplete_state.highlighted)
+            {
+                core.input.blur();
+                core.parser.autocomplete_state.highlighted = true;
+                core.parser.autocomplete_state.index = 0;
+            }
+            else
+            {
+                ++core.parser.autocomplete_state.index;
+                if (core.parser.autocomplete_state.index == core.parser.autocomplete_state.command_array.length)
+                {
+                    // out of the autocomplete, into highlight again
+                    clearAutocomplete();
+                    return false;
+                }
+            }
+    
+            updateAutocompleteFocus();
+            return true;
+        }
+        else
+        {
+            // no autocomplete available, fall through
+            return false;
+        }
+    }
+    else
+    {
+        if (core.parser.autocomplete_state.highlighted)
+        {
+            // inside autocomplete
+            if (core.parser.autocomplete_state.index == 0)
+            {
+                // leaving autocomplete
+                core.parser.autocomplete_state.highlighted = false;
+                core.input.focus();
+            }
+            else
+            {
+                // going one up inside autocomplete
+                --core.parser.autocomplete_state.index;
+            }
+
+            updateAutocompleteFocus();
+            return true;
+        }
+        else
+        {
+            // outside, fall through
+            return false;
+        }
+    }
+}
+
 function onVerticalInput(is_down_input) {
 
     // DOWN ARROW
@@ -2042,8 +2103,12 @@ function onVerticalInput(is_down_input) {
             if (core.view.slideshow.highlightingActive) {
                 onSlideshowSaveAction();
             } else {
-                core.view.slideshow.highlightingActive = true;
-                core.input.blur();
+                const autcomplete_captured = handleAutocomplete(is_down_input);
+                if (!autcomplete_captured)
+                {
+                    core.view.slideshow.highlightingActive = true;
+                    core.input.blur();
+                }
             }
             return;
         }
@@ -2056,71 +2121,31 @@ function onVerticalInput(is_down_input) {
 
         // Arrows do nothing in special mode
         if (core.view.mode.special) {
+            handleAutocomplete(is_down_input);
             return;
         }
 
         if (!core.view.slideshow.highlightingActive) 
         {
-            if (core.parser.autocomplete_state.command_array.length > 0)
+            const autcomplete_captured = handleAutocomplete(is_down_input);
+            if (!autcomplete_captured)
             {
-                // autocomplete available, go through it
-                if (!core.parser.autocomplete_state.highlighted)
-                {
-                    core.input.blur();
-                    core.parser.autocomplete_state.highlighted = true;
-                    core.parser.autocomplete_state.index = 0;
-                }
-                else
-                {
-                    ++core.parser.autocomplete_state.index;
-                    if (core.parser.autocomplete_state.index == core.parser.autocomplete_state.command_array.length)
-                    {
-                        // out of the autocomplete, into highlight again
-                        clearAutocomplete();
-                        core.view.activateHighlight();
-                        return;
-                    }
-                }
-
-                updateAutocompleteFocus();
-                return;
-            }
-            else
-            {
-                // no autocomplete available, always enable highlight
                 core.view.activateHighlight();
-                return;
             }
         }
-
     }
 
     // UP ARROW
     else {
 
-        if (!core.view.slideshow.highlightingActive) {
-            if (!system.menuActive) {
+        if (!core.view.slideshow.highlightingActive) 
+        {
+            if (!system.menuActive) 
+            {
 
-                if (core.parser.autocomplete_state.highlighted)
+                const autcomplete_captured = handleAutocomplete(is_down_input);
+                if (!autcomplete_captured)
                 {
-                    // inside autocomplete
-                    if (core.parser.autocomplete_state.index == 0)
-                    {
-                        // leaving autocomplete
-                        core.parser.autocomplete_state.highlighted = false;
-                        core.input.focus();
-                    }
-                    else
-                    {
-                        // going one up inside autocomplete
-                        --core.parser.autocomplete_state.index;
-                    }
-
-                    updateAutocompleteFocus();
-                }
-                else
-                {
-                    // outside autocomplete, menu activate
                     uiController.showMenu();
                 }
             } 
